@@ -32,9 +32,27 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 public:
+	void FlushAndDisconnect();
+	void OnDestroy();
+	HHOOK SetWindowsHookExA(int idHook, HOOKPROC lpfn, HINSTANCE hmod, DWORD dwThreadId);
+	void CmOwayDlg::OnKeyDown();
 	afx_msg void OnBnClickedOk();
 	afx_msg void OnBnClickedButtonConnect();
 	afx_msg void OnBnClickedButtonDisconnect();
-	void FlushAndDisconnect();
-	void OnDestroy();
+	afx_msg void OnBnClickedButtonUp();
+	afx_msg void OnBnClickedButtonDown();
+	afx_msg void OnBnClickedButtonRight();
+	afx_msg void OnBnClickedButtonLeft();
+	afx_msg void OnBnClickedButtonStop();
+	afx_msg void OnBnClickedButtonLed1();
+	afx_msg void OnBnClickedButtonLed2();
+	afx_msg void OnBnClickedButtonLed3();
+	afx_msg void OnBnClickedButtonLed4();
+	afx_msg void OnBnClickedRadioLed1();
+	afx_msg void OnBnClickedRadioLed2();
+	afx_msg void OnBnClickedRadioLed3();
+	afx_msg void OnBnClickedRadioLed4();
+	afx_msg void OnNMCustomdrawSliderRight(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnNMCustomdrawSliderLeft(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnNMReleasedcaptureSliderLeft(NMHDR* pNMHDR, LRESULT* pResult);
 };
