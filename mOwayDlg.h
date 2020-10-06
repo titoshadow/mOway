@@ -32,10 +32,11 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 public:
-	void FlushAndDisconnect();
+	CSliderCtrl sliderLeft;
+	CSliderCtrl sliderRight;
+	bool connected = false;
 	void OnDestroy();
-	HHOOK SetWindowsHookExA(int idHook, HOOKPROC lpfn, HINSTANCE hmod, DWORD dwThreadId);
-	void CmOwayDlg::OnKeyDown();
+	void FlushAndDisconnect();
 	afx_msg void OnBnClickedOk();
 	afx_msg void OnBnClickedButtonConnect();
 	afx_msg void OnBnClickedButtonDisconnect();
@@ -52,7 +53,6 @@ public:
 	afx_msg void OnBnClickedRadioLed2();
 	afx_msg void OnBnClickedRadioLed3();
 	afx_msg void OnBnClickedRadioLed4();
-	afx_msg void OnNMCustomdrawSliderRight(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnNMCustomdrawSliderLeft(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnNMReleasedcaptureSliderLeft(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnNMReleasedcaptureSliderRight(NMHDR* pNMHDR, LRESULT* pResult);
 };

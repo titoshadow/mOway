@@ -208,10 +208,10 @@
     <None Include="res\mOway.rc2" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="res\mOway.ico" />
+    <Library Include="CMoway.lib" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="CMoway.lib" />
+    <Image Include="res\chicken.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

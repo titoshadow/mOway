@@ -59,11 +59,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="res\mOway.ico">
-      <Filter>Archivos de recursos</Filter>
-    </Image>
+    <Library Include="CMoway.lib" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="CMoway.lib" />
+    <Image Include="res\chicken.ico">
+      <Filter>Archivos de recursos</Filter>
+    </Image>
   </ItemGroup>
 </Project>
