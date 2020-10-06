@@ -122,9 +122,8 @@ BOOL CmOwayDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// Establecer icono grande
 	SetIcon(m_hIcon, FALSE);		// Establecer icono pequeño
 
-	// TODO: agregar aquí inicialización adicional
-	sliderLeft.SetRange(-100, 100);
-	sliderRight.SetRange(-100, 100);
+	sliderLeft.SetRange(-100, 100, 1);
+	sliderRight.SetRange(-100, 100, 1);
 	sliderLeft.SetPos(0);
 	sliderRight.SetPos(0);
 	
