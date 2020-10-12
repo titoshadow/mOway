@@ -64,6 +64,25 @@ void CmOwayDlg::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_SLIDER_LEFT, sliderLeft);
 	DDX_Control(pDX, IDC_SLIDER_RIGHT, sliderRight);
+	DDX_Control(pDX, IDC_PROGRESS_LIGHT, pBLight);
+	DDX_Control(pDX, IDC_STATIC_LIGHT, labelLight);
+	DDX_Control(pDX, IDC_PROGRESS_BATTERY, pBBattery);
+	DDX_Control(pDX, IDC_STATIC_BATTERY, labelBattery);
+	DDX_Control(pDX, IDC_RADIO_LED1, radioLED1);
+	DDX_Control(pDX, IDC_RADIO_LED2, radioLED2);
+	DDX_Control(pDX, IDC_RADIO_LED3, radioLED3);
+	DDX_Control(pDX, IDC_RADIO_LED4, radioLED4);
+	DDX_Control(pDX, IDC_CHECK_THREAD, checkThread);
+	DDX_Control(pDX, IDC_PROGRESS_PLEFT, pBPLeft);
+	DDX_Control(pDX, IDC_PROGRESS_PCLEFT, pBPCLeft);
+	DDX_Control(pDX, IDC_PROGRESS_PCRIGHT, pBPCRight);
+	DDX_Control(pDX, IDC_PROGRESS_PRIGHT, pBPRight);
+	DDX_Control(pDX, IDC_STATIC_KM, staticKM);
+	DDX_Control(pDX, IDC_PROGRESS_TEMP, pBTemp);
+	DDX_Control(pDX, IDC_PROGRESS_NOISE, pBNoise);
+	DDX_Control(pDX, IDC_PROGRESS_X, pBX);
+	DDX_Control(pDX, IDC_PROGRESS_Y, pBY);
+	DDX_Control(pDX, IDC_PROGRESS_Z, pBZ);
 }
 
 BEGIN_MESSAGE_MAP(CmOwayDlg, CDialogEx)
@@ -88,6 +107,12 @@ BEGIN_MESSAGE_MAP(CmOwayDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_RADIO_LED4, &CmOwayDlg::OnBnClickedRadioLed4)
 	ON_NOTIFY(NM_RELEASEDCAPTURE, IDC_SLIDER_LEFT, &CmOwayDlg::OnNMReleasedcaptureSliderLeft)
 	ON_NOTIFY(NM_RELEASEDCAPTURE, IDC_SLIDER_RIGHT, &CmOwayDlg::OnNMReleasedcaptureSliderRight)
+	ON_BN_CLICKED(IDC_BUTTON_LED_OFF, &CmOwayDlg::OnBnClickedButtonLedOff)
+	ON_BN_CLICKED(IDC_BUTTON_RELOAD_LIGHT, &CmOwayDlg::OnBnClickedButtonReloadLight)
+	ON_BN_CLICKED(IDC_BUTTON_RELOAD_BATTERY, &CmOwayDlg::OnBnClickedButtonReloadBattery)
+	ON_BN_CLICKED(IDC_CHECK_THREAD, &CmOwayDlg::OnBnClickedCheckThread)
+	ON_BN_CLICKED(IDC_BUTTON_RELOAD_PROXIMITY, &CmOwayDlg::OnBnClickedButtonReloadProximity)
+	ON_BN_CLICKED(IDC_BUTTON_RELOAD_MISC, &CmOwayDlg::OnBnClickedButtonReloadMisc)
 END_MESSAGE_MAP()
 
 
@@ -126,6 +151,20 @@ BOOL CmOwayDlg::OnInitDialog()
 	sliderRight.SetRange(-100, 100, 1);
 	sliderLeft.SetPos(0);
 	sliderRight.SetPos(0);
+
+	pBLight.SetRange(0, 100);
+	pBBattery.SetRange(0, 100);
+
+	pBTemp.SetRange(0, 100);
+	pBNoise.SetRange(0, 255);
+
+	pBX.SetRange(0, 255);
+	pBY.SetRange(0, 255);
+	pBZ.SetRange(0, 255);
+
+	checkThread.SetCheck(0);
+
+	m_ThreadUpdate = NULL;
 	
 	return TRUE;  // Devuelve TRUE  a menos que establezca el foco en un control
 }
@@ -176,6 +215,36 @@ void CmOwayDlg::OnPaint()
 	}
 }
 
+
+UINT CmOwayDlg::MyThread(LPVOID pParam) 
+{
+	CmOwayDlg* pMisDatos = (CmOwayDlg*) pParam;
+	int kM;
+	if (pMisDatos->connected)
+	{
+		while (pMisDatos->checkThread.GetCheck() == 1)
+		{
+			pMisDatos->OnBnClickedButtonReloadBattery();
+			pMisDatos->OnBnClickedButtonReloadLight();
+			pMisDatos->OnBnClickedButtonReloadMisc();
+			pMisDatos->OnBnClickedButtonReloadProximity();
+
+			miMoway.ReadMotorKM(&kM);
+			CString str;
+			str.Format(_T("%d"), kM);
+			pMisDatos->staticKM.SetWindowTextW(str);
+			Sleep(0);
+		}
+		AfxEndThread(0);
+	}
+	else
+	{
+		AfxMessageBox((CString)"You need to connect first !");
+	}
+	return 0;
+}
+
+
 void PowerOffAllLEDs()
 {
 	miMoway.ChangeLEDState(CMoway::leds::LED_BRAKE, CMoway::led_action::OFF);
@@ -202,6 +271,10 @@ void CmOwayDlg::OnBnClickedOk()
 void CmOwayDlg::OnBnClickedButtonConnect()
 {
 	connected = miMoway.ConnectMoway(22);
+	
+	if(!connected)
+		AfxMessageBox((CString)"Error connecting.");
+
 }
 
 
@@ -223,6 +296,8 @@ void CmOwayDlg::FlushAndDisconnect()
 	{
 		miMoway.SetSpeed(0, 0, CMoway::FORWARD, CMoway::FORWARD, 0, 0);
 		PowerOffAllLEDs();
+		sliderLeft.SetPos(0);
+		sliderRight.SetPos(0);
 		miMoway.DisconnectMoway();
 	}
 }
@@ -230,36 +305,56 @@ void CmOwayDlg::FlushAndDisconnect()
 
 void CmOwayDlg::OnBnClickedButtonUp()
 {
-	if(connected)
-		miMoway.GoStraight(1, CMoway::FORWARD, 0);
+	if (connected)
+	{
+		miMoway.GoStraight(50, CMoway::FORWARD, 0);
+		sliderLeft.SetPos(50);
+		sliderRight.SetPos(50);
+	}
 }
 
 
 void CmOwayDlg::OnBnClickedButtonDown()
 {
 	if (connected)
+	{
 		miMoway.GoStraight(50, CMoway::BACKWARD, 0);
+		sliderLeft.SetPos(-50);
+		sliderRight.SetPos((short)-50);
+	}
 }
 
 
 void CmOwayDlg::OnBnClickedButtonRight()
 {
 	if (connected)
-		miMoway.SetSpeed(25, 25, CMoway::FORWARD, CMoway::BACKWARD, 5, 5);
+	{
+		miMoway.SetSpeed(25, 25, CMoway::FORWARD, CMoway::BACKWARD, 0, 0);
+		sliderLeft.SetPos(25);
+		sliderRight.SetPos(-25);
+	}
 }
 
 
 void CmOwayDlg::OnBnClickedButtonLeft()
 {
 	if (connected)
-		miMoway.SetSpeed(25, 25, CMoway::BACKWARD, CMoway::FORWARD, 5, 5);
+	{
+		miMoway.SetSpeed(25, 25, CMoway::BACKWARD, CMoway::FORWARD, 0, 0);
+		sliderLeft.SetPos(-25);
+		sliderRight.SetPos(25);
+	}
 }
 
 
 void CmOwayDlg::OnBnClickedButtonStop()
 {
 	if (connected)
-		miMoway.SetSpeed(0, 0, CMoway::FORWARD, CMoway::FORWARD, 1, 1);
+	{
+		miMoway.SetSpeed(0, 0, CMoway::FORWARD, CMoway::FORWARD, 0, 0);
+		sliderLeft.SetPos(0);
+		sliderRight.SetPos(0);
+	}
 }
 
 
@@ -267,9 +362,9 @@ void CmOwayDlg::OnBnClickedButtonLed1()
 {
 	if (connected)
 	{
-		miMoway.ChangeLEDState(CMoway::leds::LED_BRAKE, CMoway::led_action::ON);
+		miMoway.ChangeLEDState(CMoway::leds::LED_FRONT, CMoway::led_action::ON);
 		Sleep(3000);
-		miMoway.ChangeLEDState(CMoway::leds::LED_BRAKE, CMoway::led_action::OFF);
+		miMoway.ChangeLEDState(CMoway::leds::LED_FRONT, CMoway::led_action::OFF);
 	}
 }
 
@@ -279,9 +374,9 @@ void CmOwayDlg::OnBnClickedButtonLed2()
 {
 	if (connected)
 	{
-		miMoway.ChangeLEDState(CMoway::leds::LED_FRONT, CMoway::led_action::ON);
+		miMoway.ChangeLEDState(CMoway::leds::LED_BRAKE, CMoway::led_action::ON);
 		Sleep(3000);
-		miMoway.ChangeLEDState(CMoway::leds::LED_FRONT, CMoway::led_action::OFF);
+		miMoway.ChangeLEDState(CMoway::leds::LED_BRAKE, CMoway::led_action::OFF);
 	}
 }
 
@@ -313,7 +408,7 @@ void CmOwayDlg::OnBnClickedRadioLed1()
 	if (connected)
 	{
 		PowerOffAllLEDs();
-		miMoway.ChangeLEDState(CMoway::leds::LED_BRAKE, CMoway::led_action::ON);
+		miMoway.ChangeLEDState(CMoway::leds::LED_FRONT, CMoway::led_action::ON);
 	}
 }
 
@@ -323,7 +418,7 @@ void CmOwayDlg::OnBnClickedRadioLed2()
 	if (connected)
 	{
 		PowerOffAllLEDs();
-		miMoway.ChangeLEDState(CMoway::leds::LED_FRONT, CMoway::led_action::ON);
+		miMoway.ChangeLEDState(CMoway::leds::LED_BRAKE, CMoway::led_action::ON);
 	}
 }
 
@@ -352,7 +447,28 @@ void CmOwayDlg::OnNMReleasedcaptureSliderLeft(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	if (connected)
 	{
-		miMoway.SetSpeed(sliderLeft.GetPos(), sliderRight.GetPos(), CMoway::FORWARD, CMoway::BACKWARD, 5, 5);
+		if (sliderLeft.GetPos() < 0)
+		{
+			if (sliderRight.GetPos() < 0)
+			{
+				miMoway.SetSpeed(abs(sliderLeft.GetPos()), abs(sliderRight.GetPos()), CMoway::BACKWARD, CMoway::BACKWARD, 0, 0);
+			}
+			else
+			{
+				miMoway.SetSpeed(abs(sliderLeft.GetPos()), abs(sliderRight.GetPos()), CMoway::BACKWARD, CMoway::FORWARD, 0, 0);
+			}
+		}
+		else
+		{
+			if (sliderRight.GetPos() >= 0)
+			{
+				miMoway.SetSpeed(abs(sliderLeft.GetPos()), abs(sliderRight.GetPos()), CMoway::FORWARD, CMoway::BACKWARD, 0, 0);
+			}
+			else
+			{
+				miMoway.SetSpeed(abs(sliderLeft.GetPos()), abs(sliderRight.GetPos()), CMoway::FORWARD, CMoway::FORWARD, 0, 0);
+			}
+		}
 		*pResult = 0;
 	}
 }
@@ -362,8 +478,124 @@ void CmOwayDlg::OnNMReleasedcaptureSliderRight(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	if (connected)
 	{
-		miMoway.SetSpeed(sliderLeft.GetPos(), sliderRight.GetPos(), CMoway::FORWARD, CMoway::BACKWARD, 5, 5);
+		if (sliderLeft.GetPos() < 0)
+		{
+			if (sliderRight.GetPos() < 0)
+			{
+				miMoway.SetSpeed(abs(sliderLeft.GetPos()), abs(sliderRight.GetPos()), CMoway::BACKWARD, CMoway::BACKWARD, 0, 0);
+			}
+			else
+			{
+				miMoway.SetSpeed(abs(sliderLeft.GetPos()), abs(sliderRight.GetPos()), CMoway::BACKWARD, CMoway::FORWARD, 0, 0);
+			}
+		}
+		else
+		{
+			if (sliderRight.GetPos() >= 0)
+			{
+				miMoway.SetSpeed(abs(sliderLeft.GetPos()), abs(sliderRight.GetPos()), CMoway::FORWARD, CMoway::BACKWARD, 0, 0);
+			}
+			else
+			{
+				miMoway.SetSpeed(abs(sliderLeft.GetPos()), abs(sliderRight.GetPos()), CMoway::FORWARD, CMoway::FORWARD, 0, 0);
+			}
+		}
 		*pResult = 0;
 	}
 }
 
+
+void CmOwayDlg::OnBnClickedButtonLedOff()
+{
+	radioLED1.SetCheck(0);
+	radioLED2.SetCheck(0);
+	radioLED3.SetCheck(0);
+	radioLED4.SetCheck(0);
+
+	if (connected)
+	{
+		PowerOffAllLEDs();
+	}
+}
+
+
+void CmOwayDlg::OnBnClickedButtonReloadLight()
+{
+	int lightS;
+
+	if (connected)
+	{
+		miMoway.ChangeLEDState(CMoway::LED_TOP_GREEN, CMoway::OFF); 
+		miMoway.ChangeLEDState(CMoway::LED_TOP_RED, CMoway::OFF);
+		miMoway.ReadAmbientLightSensor(&lightS);
+		pBLight.SetPos(lightS);
+		CString str;
+		str.Format(_T("%d"), lightS);
+		labelLight.SetWindowTextW(str);
+	}
+}
+
+
+void CmOwayDlg::OnBnClickedButtonReloadBattery()
+{
+	int batteryS;
+
+	if (connected)
+	{
+		miMoway.ReadBatteryStatus(&batteryS);
+		pBBattery.SetPos(batteryS);
+		CString str;
+		str.Format(_T("%d"), batteryS);
+		labelBattery.SetWindowTextW(str);
+	}
+}
+
+
+void CmOwayDlg::OnBnClickedCheckThread()
+{
+	m_ThreadUpdate = AfxBeginThread(MyThread, this); 
+
+	if (MyThread == NULL)
+	{
+		exit(1);
+	}
+}
+
+
+
+
+void CmOwayDlg::OnBnClickedButtonReloadProximity()
+{
+	int pL, pCL, pCR, pR;
+	
+	if (connected)
+	{
+		miMoway.ReadProximitySensors(&pL, &pCL, &pCR, &pR);
+		
+		pBPLeft.SetPos(pL);
+		pBPCLeft.SetPos(pCL);
+		pBPCRight.SetPos(pCR);
+		pBPRight.SetPos(pR);
+	}
+
+}
+
+
+void CmOwayDlg::OnBnClickedButtonReloadMisc()
+{
+	int temp, noise, x, y, z;
+
+	if (connected)
+	{
+		miMoway.ReadTemp(&temp);
+		pBTemp.SetPos(temp);
+		miMoway.ReadMicSensor(&noise);
+		pBNoise.SetPos(noise);
+		miMoway.ReadAccelerator(&x, CMoway::X);
+		pBX.SetPos(x);
+		miMoway.ReadAccelerator(&y, CMoway::Y);
+		pBY.SetPos(y);
+		miMoway.ReadAccelerator(&z, CMoway::Z);
+		pBZ.SetPos(z);
+	}
+}

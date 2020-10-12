@@ -65,5 +65,8 @@
     <Image Include="res\chicken.ico">
       <Filter>Archivos de recursos</Filter>
     </Image>
+    <Image Include="res\reload.ico">
+      <Filter>Archivos de recursos</Filter>
+    </Image>
   </ItemGroup>
 </Project>

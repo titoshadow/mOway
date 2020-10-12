@@ -212,6 +212,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\chicken.ico" />
+    <Image Include="res\reload.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
