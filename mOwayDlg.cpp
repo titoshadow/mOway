@@ -240,6 +240,7 @@ UINT CmOwayDlg::MyThread(LPVOID pParam)
 	else
 	{
 		AfxMessageBox((CString)"You need to connect first !");
+		pMisDatos->checkThread.SetCheck(0);
 	}
 	return 0;
 }
