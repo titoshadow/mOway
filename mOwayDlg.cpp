@@ -23,12 +23,12 @@ class CAboutDlg : public CDialogEx
 public:
 	CAboutDlg();
 
-// Datos del cuadro de diálogo
+	// Datos del cuadro de diálogo
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_ABOUTBOX };
 #endif
 
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // Compatibilidad con DDX/DDV
 
 // Implementación
@@ -115,7 +115,7 @@ BEGIN_MESSAGE_MAP(CmOwayDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_RELOAD_MISC, &CmOwayDlg::OnBnClickedButtonReloadMisc)
 END_MESSAGE_MAP()
 
-
+int noise, x, y, z;
 // Controladores de mensajes de CmOwayDlg
 
 BOOL CmOwayDlg::OnInitDialog()
@@ -165,7 +165,7 @@ BOOL CmOwayDlg::OnInitDialog()
 	checkThread.SetCheck(0);
 
 	m_ThreadUpdate = NULL;
-	
+
 	return TRUE;  // Devuelve TRUE  a menos que establezca el foco en un control
 }
 
@@ -216,23 +216,32 @@ void CmOwayDlg::OnPaint()
 }
 
 
-UINT CmOwayDlg::MyThread(LPVOID pParam) 
+UINT CmOwayDlg::MyThread(LPVOID pParam)
 {
-	CmOwayDlg* pMisDatos = (CmOwayDlg*) pParam;
+	CmOwayDlg* pMisDatos = (CmOwayDlg*)pParam;
 	int kM;
 	if (pMisDatos->connected)
 	{
 		while (pMisDatos->checkThread.GetCheck() == 1)
 		{
 			pMisDatos->OnBnClickedButtonReloadBattery();
+			Sleep(100);
 			pMisDatos->OnBnClickedButtonReloadLight();
+			Sleep(100);
 			pMisDatos->OnBnClickedButtonReloadMisc();
+			Sleep(100);
 			pMisDatos->OnBnClickedButtonReloadProximity();
 
 			miMoway.ReadMotorKM(&kM);
+			Sleep(100);
 			CString str;
 			str.Format(_T("%d"), kM);
 			pMisDatos->staticKM.SetWindowTextW(str);
+
+			if (noise > 255.0 * 0.6)
+			{
+				pMisDatos->OnBnClickedButtonUp();
+			}
 			Sleep(0);
 		}
 		AfxEndThread(0);
@@ -254,6 +263,7 @@ void PowerOffAllLEDs()
 	miMoway.ChangeLEDState(CMoway::leds::LED_TOP_RED, CMoway::led_action::OFF);
 }
 
+
 // El sistema llama a esta función para obtener el cursor que se muestra mientras el usuario arrastra
 //  la ventana minimizada.
 HCURSOR CmOwayDlg::OnQueryDragIcon()
@@ -272,8 +282,8 @@ void CmOwayDlg::OnBnClickedOk()
 void CmOwayDlg::OnBnClickedButtonConnect()
 {
 	connected = miMoway.ConnectMoway(22);
-	
-	if(!connected)
+
+	if (!connected)
 		AfxMessageBox((CString)"Error connecting.");
 
 }
@@ -293,12 +303,26 @@ void CmOwayDlg::OnDestroy()
 
 void CmOwayDlg::FlushAndDisconnect()
 {
-	if (connected) 
+	if (connected)
 	{
 		miMoway.SetSpeed(0, 0, CMoway::FORWARD, CMoway::FORWARD, 0, 0);
 		PowerOffAllLEDs();
 		sliderLeft.SetPos(0);
 		sliderRight.SetPos(0);
+		pBBattery.SetPos(0);
+		pBLight.SetPos(0);
+		pBNoise.SetPos(0);
+		pBTemp.SetPos(0);
+		pBPLeft.SetPos(0);
+		pBPCLeft.SetPos(0);
+		pBPCRight.SetPos(0);
+		pBPRight.SetPos(0);
+		pBX.SetPos(0);
+		pBY.SetPos(0);
+		pBZ.SetPos(0);
+		checkThread.SetCheck(0);
+		staticKM.SetWindowTextW(L"0");
+
 		miMoway.DisconnectMoway();
 	}
 }
@@ -526,7 +550,7 @@ void CmOwayDlg::OnBnClickedButtonReloadLight()
 
 	if (connected)
 	{
-		miMoway.ChangeLEDState(CMoway::LED_TOP_GREEN, CMoway::OFF); 
+		miMoway.ChangeLEDState(CMoway::LED_TOP_GREEN, CMoway::OFF);
 		miMoway.ChangeLEDState(CMoway::LED_TOP_RED, CMoway::OFF);
 		miMoway.ReadAmbientLightSensor(&lightS);
 		pBLight.SetPos(lightS);
@@ -554,7 +578,7 @@ void CmOwayDlg::OnBnClickedButtonReloadBattery()
 
 void CmOwayDlg::OnBnClickedCheckThread()
 {
-	m_ThreadUpdate = AfxBeginThread(MyThread, this); 
+	m_ThreadUpdate = AfxBeginThread(MyThread, this);
 
 	if (MyThread == NULL)
 	{
@@ -568,11 +592,11 @@ void CmOwayDlg::OnBnClickedCheckThread()
 void CmOwayDlg::OnBnClickedButtonReloadProximity()
 {
 	int pL, pCL, pCR, pR;
-	
+
 	if (connected)
 	{
 		miMoway.ReadProximitySensors(&pL, &pCL, &pCR, &pR);
-		
+
 		pBPLeft.SetPos(pL);
 		pBPCLeft.SetPos(pCL);
 		pBPCRight.SetPos(pCR);
@@ -584,7 +608,7 @@ void CmOwayDlg::OnBnClickedButtonReloadProximity()
 
 void CmOwayDlg::OnBnClickedButtonReloadMisc()
 {
-	int temp, noise, x, y, z;
+	int temp;
 
 	if (connected)
 	{
