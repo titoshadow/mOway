@@ -46,7 +46,7 @@ public:
 	CButton checkThread;
 	bool connected = false;
 	void OnDestroy();
-	void FlushAndDisconnect();
+	void FlushAndDisconnect(bool dc);
 	afx_msg void OnBnClickedOk();
 	afx_msg void OnBnClickedButtonConnect();
 	afx_msg void OnBnClickedButtonDisconnect();
@@ -83,4 +83,8 @@ public:
 	CProgressCtrl pBY;
 	CProgressCtrl pBZ;
 	afx_msg void OnBnClickedButtonReloadMisc();
+	CButton buttonReloadLight;
+	CButton buttonReloadBattery;
+	CButton buttonReloadProximity;
+	CButton buttonReloadMisc;
 };
